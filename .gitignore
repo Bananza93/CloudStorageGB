@@ -1,2 +1,4 @@
 # Default ignored files
+/Java_chat.iml
 /.idea/
+/target/
