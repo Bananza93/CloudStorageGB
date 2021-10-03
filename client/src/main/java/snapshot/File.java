@@ -24,7 +24,8 @@ public class File implements Comparable<File>, FileSystemElement {
 
     /**
      * Создает "снимок" существующего в файловой системе файла.
-     * @param name имя файла
+     *
+     * @param name            имя файла
      * @param parentDirectory родительская директория
      * @throws IOException если такого файла не существует
      */
@@ -40,6 +41,7 @@ public class File implements Comparable<File>, FileSystemElement {
 
     /**
      * Переименование файла.
+     *
      * @param newName новое имя фала
      */
     public void rename(String newName) {
@@ -48,6 +50,7 @@ public class File implements Comparable<File>, FileSystemElement {
 
     /**
      * Перемещение файла в другую директорию.
+     *
      * @param newParentDirectory новая родительская директория файла
      */
     public void moveTo(Directory newParentDirectory) {
@@ -56,6 +59,7 @@ public class File implements Comparable<File>, FileSystemElement {
 
     /**
      * Обновление параметров, которые изменяются после модификации файла.
+     *
      * @throws IOException если такого файла уже не существует в файловой системе
      */
     public void updateInfoAfterModifying() throws IOException {

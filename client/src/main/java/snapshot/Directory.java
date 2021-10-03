@@ -31,7 +31,8 @@ public class Directory implements Comparable<Directory>, FileSystemElement {
 
     /**
      * Создает "снимок" существующей в файловой системе директории.
-     * @param name имя директории
+     *
+     * @param name   имя директории
      * @param parent родительская директория
      * @throws IOException если такой директории не существует в файловой системе
      */
@@ -48,6 +49,7 @@ public class Directory implements Comparable<Directory>, FileSystemElement {
 
     /**
      * Создает и возвращает "снимок" корневой директории.
+     *
      * @param rootPath путь до корневой директории
      * @return "снимок" корневой директории
      * @throws IOException если такой директории не существует в файловой системе
@@ -58,7 +60,8 @@ public class Directory implements Comparable<Directory>, FileSystemElement {
 
     /**
      * Создает и возвращает "снимок" директории.
-     * @param name имя директории
+     *
+     * @param name       имя директории
      * @param parentPath путь до родительской директории
      * @return "снимок" директории
      * @throws IOException если такой директории не существует в файловой системе
@@ -69,6 +72,7 @@ public class Directory implements Comparable<Directory>, FileSystemElement {
 
     /**
      * Переименовывает текущую директорию.
+     *
      * @param newName новое имя директории
      */
     public void rename(String newName) {
@@ -77,6 +81,7 @@ public class Directory implements Comparable<Directory>, FileSystemElement {
 
     /**
      * Перемещает текущую директорию.
+     *
      * @param newParentDirectory новая родительская директория
      */
     public void moveTo(Directory newParentDirectory) {
@@ -86,6 +91,7 @@ public class Directory implements Comparable<Directory>, FileSystemElement {
     /**
      * Добавляет переданную директорию в свой перечень поддиректорий.
      * Для переданной директории текущая директория устанавливается как родительская.
+     *
      * @param directory директория, которая будет являтся поддиректорией для текущей
      * @return переданная в метод директория
      */
@@ -98,6 +104,7 @@ public class Directory implements Comparable<Directory>, FileSystemElement {
 
     /**
      * Создает новую директорию с переданным именем и добавляет её в перечень поддиректорий текущей директории.
+     *
      * @param name имя директории, которая будет являтся поддиректорией для текущей
      * @return вновь созданная директория с переданным в метод именем
      * @throws IOException если такой директории не существует в файловой системе
@@ -109,6 +116,7 @@ public class Directory implements Comparable<Directory>, FileSystemElement {
     /**
      * Добавляет переданный файл в свой перечень файлов.
      * Для переданной файла текущая директория устанавливается как родительская.
+     *
      * @param file файл, для которого текущая директория будет родительской
      * @return переданный в метод файл
      */
@@ -120,6 +128,7 @@ public class Directory implements Comparable<Directory>, FileSystemElement {
 
     /**
      * Создает новый файл с переданным именем и добавляет его в перечень файлов текущей директории.
+     *
      * @param name имя файла, для которого текущая директория будет родительской
      * @return вновь созданный файл с переданным в метод именем
      * @throws IOException если такого файла не существует в файловой системе
@@ -130,6 +139,7 @@ public class Directory implements Comparable<Directory>, FileSystemElement {
 
     /**
      * Удаляет директорию с переданным именем из списка поддиректорий текущей директории.
+     *
      * @param name имя директории
      * @return удаленная из списка поддиректорий директория
      */
@@ -139,6 +149,7 @@ public class Directory implements Comparable<Directory>, FileSystemElement {
 
     /**
      * Удаляет файл с переданным именем из списка файлов текущей директории.
+     *
      * @param name имя файла
      * @return удалённый из списка файлов файл
      */
@@ -148,6 +159,7 @@ public class Directory implements Comparable<Directory>, FileSystemElement {
 
     /**
      * Проверяет, находится ли директория с переданным именем в списке поддиректорий текущей директории.
+     *
      * @param directoryName имя директории
      * @return true - если директория с переданным именем находится в списке поддиректорий
      */
@@ -157,6 +169,7 @@ public class Directory implements Comparable<Directory>, FileSystemElement {
 
     /**
      * Проверяет, находится ли файл с переданным именем в списке файлов текущей директории.
+     *
      * @param fileName имя файла
      * @return true - если файл с переданным именем находится в списке файлов
      */
@@ -219,8 +232,9 @@ public class Directory implements Comparable<Directory>, FileSystemElement {
     /**
      * Рекурсивно осуществляет поиск директории по переданному пути.
      * Составная часть метода getDirectory() класса FileTreeSnapshot.
+     *
      * @param splitPath путь, поделенный на отдельные директории
-     * @param pos текущая позиция в массиве splitPath
+     * @param pos       текущая позиция в массиве splitPath
      * @return директорию, которой соответствует переданный путь, иначе - null
      */
     Directory getDirectory(String[] splitPath, int pos) {

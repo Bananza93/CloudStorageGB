@@ -86,19 +86,19 @@ public class DirectoryWatcher {
                                 Path prevPath = prevDir.getPath();
                                 prevDir.rename(currElementName);
                                 currElement = currElementParentDir.addSubdirectory(prevDir);
-                                addOperation(Operation.OperationType.RENAME, Operation.Entity.DIRECTORY, prevPath, prevDir.getPath());
+                                addOperation(Operation.Type.RENAME, Operation.Entity.DIRECTORY, prevPath, prevDir.getPath());
                             } else if (isDirectoryMoved(currElementPath, prevDir)) {
                                 Path prevPath = prevDir.getPath();
                                 prevDir.moveTo(currElementParentDir);
                                 currElement = prevDir;
-                                addOperation(Operation.OperationType.MOVE_TO, Operation.Entity.DIRECTORY, prevPath, prevDir.getPath());
+                                addOperation(Operation.Type.MOVE_TO, Operation.Entity.DIRECTORY, prevPath, prevDir.getPath());
                             } else {
                                 currElement = currElementParentDir.addSubdirectory(currElementName);
-                                addOperation(Operation.OperationType.CREATE, Operation.Entity.DIRECTORY, currElementPath);
+                                addOperation(Operation.Type.CREATE, Operation.Entity.DIRECTORY, currElementPath);
                             }
                         } else {
                             currElement = currElementParentDir.addSubdirectory(currElementName);
-                            addOperation(Operation.OperationType.CREATE, Operation.Entity.DIRECTORY, currElementPath);
+                            addOperation(Operation.Type.CREATE, Operation.Entity.DIRECTORY, currElementPath);
                         }
                     } else {
                         if (prevEvent != null && prevEvent.kind() == ENTRY_DELETE && !operationsList.isEmpty() && prevElement instanceof File prevFile) {
@@ -106,36 +106,36 @@ public class DirectoryWatcher {
                                 Path prevPath = prevFile.getPath();
                                 prevFile.rename(currElementName);
                                 currElement = currElementParentDir.addFile(prevFile);
-                                addOperation(Operation.OperationType.RENAME, Operation.Entity.FILE, prevPath, prevFile.getPath());
+                                addOperation(Operation.Type.RENAME, Operation.Entity.FILE, prevPath, prevFile.getPath());
                             } else if (isFileMoved(currElementPath, prevFile)) {
                                 Path prevPath = prevFile.getPath();
                                 prevFile.moveTo(currElementParentDir);
                                 currElement = prevFile;
-                                addOperation(Operation.OperationType.MOVE_TO, Operation.Entity.FILE, prevPath, prevFile.getPath());
+                                addOperation(Operation.Type.MOVE_TO, Operation.Entity.FILE, prevPath, prevFile.getPath());
                             } else {
                                 currElement = currElementParentDir.addFile(currElementName);
-                                addOperation(Operation.OperationType.CREATE, Operation.Entity.FILE, currElementPath);
+                                addOperation(Operation.Type.CREATE, Operation.Entity.FILE, currElementPath);
                             }
                         } else {
                             currElement = currElementParentDir.addFile(currElementName);
-                            addOperation(Operation.OperationType.CREATE, Operation.Entity.FILE, currElementPath);
+                            addOperation(Operation.Type.CREATE, Operation.Entity.FILE, currElementPath);
                         }
                     }
                 } else if (kind == ENTRY_DELETE) {
                     if (currElementParentDir.containsSubdirectory(currElementName)) {
                         currElement = currElementParentDir.removeSubdirectory(currElementName);
-                        addOperation(Operation.OperationType.DELETE, Operation.Entity.DIRECTORY, currElementPath);
+                        addOperation(Operation.Type.DELETE, Operation.Entity.DIRECTORY, currElementPath);
                     } else {
                         currElement = currElementParentDir.removeFile(currElementName);
-                        addOperation(Operation.OperationType.DELETE, Operation.Entity.FILE, currElementPath);
+                        addOperation(Operation.Type.DELETE, Operation.Entity.FILE, currElementPath);
                     }
                 } else if (kind == ENTRY_MODIFY) {
                     if (Files.isDirectory(currElementPath)) {
                         currElementParentDir.getSubdirectory(currElementName).updateLastModified();
-                        addOperation(Operation.OperationType.MODIFY, Operation.Entity.DIRECTORY, currElementPath);
+                        addOperation(Operation.Type.MODIFY, Operation.Entity.DIRECTORY, currElementPath);
                     } else {
                         currElementParentDir.getFile(currElementName).updateInfoAfterModifying();
-                        addOperation(Operation.OperationType.MODIFY, Operation.Entity.FILE, currElementPath);
+                        addOperation(Operation.Type.MODIFY, Operation.Entity.FILE, currElementPath);
                     }
                     continue;
                 } else {
@@ -151,22 +151,22 @@ public class DirectoryWatcher {
         shutdown();
     }
 
-    private void addOperation(Operation.OperationType type, Operation.Entity entity, Path pathToEntity) {
+    private void addOperation(Operation.Type type, Operation.Entity entity, Path pathToEntity) {
         addOperation(type, entity, pathToEntity, null);
     }
 
-    private void addOperation(Operation.OperationType type, Operation.Entity entity, Path oldPath, Path newPath) {
+    private void addOperation(Operation.Type type, Operation.Entity entity, Path oldPath, Path newPath) {
         switch (type) {
-            case CREATE -> operationsList.add(Operation.createOperation(entity, oldPath));
-            case DELETE -> operationsList.add(Operation.deleteOperation(entity, oldPath));
-            case MODIFY -> operationsList.add(Operation.modifyOperation(entity, oldPath));
+            case CREATE -> operationsList.add(Operation.create(entity, oldPath));
+            case DELETE -> operationsList.add(Operation.delete(entity, oldPath));
+            case MODIFY -> operationsList.add(Operation.modify(entity, oldPath));
             case RENAME -> {
                 operationsList.remove(operationsList.size() - 1);
-                operationsList.add(Operation.renameOperation(entity, oldPath, newPath));
+                operationsList.add(Operation.rename(entity, oldPath, newPath));
             }
             case MOVE_TO -> {
                 operationsList.remove(operationsList.size() - 1);
-                operationsList.add(Operation.moveToOperation(entity, oldPath, newPath));
+                operationsList.add(Operation.moveTo(entity, oldPath, newPath));
             }
         }
 
