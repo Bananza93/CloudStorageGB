@@ -1,4 +1,6 @@
 # Default ignored files
-/Java_chat.iml
 /.idea/
 /target/
+/CloudStorageGB.iml
+/client/client.iml
+/server/server.iml
