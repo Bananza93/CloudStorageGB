@@ -37,7 +37,7 @@ public class FileTreeSnapshot {
         long start = System.currentTimeMillis();
         System.out.println("Creating snapshot for " + initialPath + "...");
         this.initialDirectory = fillDirectory(initialPath);
-        System.out.println("Snapshot created (" + (System.currentTimeMillis() - start) + " ms).");
+        System.out.printf("Snapshot created (%.3f sec).\n", ((System.currentTimeMillis() - start) / 1000.0));
     }
 
     /**

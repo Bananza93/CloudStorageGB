@@ -1,5 +1,7 @@
 package snapshot;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import utils.CRC32Hash;
 
 import java.io.IOException;
@@ -7,20 +9,29 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileTime;
+import java.util.Date;
 import java.util.Objects;
 
 /**
  * Класс, который содержит в себе необходимые параметры файла для работы с watcher.DirectoryWatcher.
  */
 public class File implements Comparable<File>, FileSystemElement {
-
+    @JsonProperty
     private String name;
+    @JsonBackReference
+    @JsonProperty
     private Directory parentDirectory;
-    private final FileTime creationTime;
-    private FileTime lastModifiedTime;
+    @JsonProperty
+    private Date creationTime;
+    @JsonProperty
+    private Date lastModifiedTime;
+    @JsonProperty
     private long size;
+    @JsonProperty
     private long crc32Hash;
+
+    public File() {
+    }
 
     /**
      * Создает "снимок" существующего в файловой системе файла.
@@ -33,8 +44,8 @@ public class File implements Comparable<File>, FileSystemElement {
         this.name = name;
         this.parentDirectory = parentDirectory;
         BasicFileAttributes bfa = Files.getFileAttributeView(this.getPath(), BasicFileAttributeView.class).readAttributes();
-        this.creationTime = bfa.creationTime();
-        this.lastModifiedTime = bfa.lastModifiedTime();
+        this.creationTime = new Date(bfa.creationTime().toMillis());
+        this.lastModifiedTime = new Date(bfa.lastModifiedTime().toMillis());
         this.size = bfa.size();
         this.crc32Hash = CRC32Hash.calculateCrc32Hash(this.getPath());
     }
@@ -64,7 +75,7 @@ public class File implements Comparable<File>, FileSystemElement {
      */
     public void updateInfoAfterModifying() throws IOException {
         BasicFileAttributes bfa = Files.getFileAttributeView(this.getPath(), BasicFileAttributeView.class).readAttributes();
-        this.lastModifiedTime = bfa.lastModifiedTime();
+        this.lastModifiedTime.setTime(bfa.lastModifiedTime().toMillis());
         this.size = bfa.size();
         this.crc32Hash = CRC32Hash.calculateCrc32Hash(this.getPath());
     }
@@ -85,11 +96,11 @@ public class File implements Comparable<File>, FileSystemElement {
         return this.parentDirectory.getPath();
     }
 
-    public FileTime getCreationTime() {
+    public Date getCreationTime() {
         return creationTime;
     }
 
-    public FileTime getLastModifiedTime() {
+    public Date getLastModifiedTime() {
         return lastModifiedTime;
     }
 
