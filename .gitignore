@@ -1,2 +1,6 @@
 # Default ignored files
 /.idea/
+/target/
+/CloudStorageGB.iml
+/client/client.iml
+/server/server.iml
