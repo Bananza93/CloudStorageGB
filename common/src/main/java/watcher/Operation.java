@@ -3,6 +3,7 @@ package watcher;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.nio.file.Path;
+import java.util.Objects;
 
 /**
  * Представляет собой сообщение о проведенной операции в отслеживаемой watcher.DirectoryWatcher директории.
@@ -116,6 +117,19 @@ public class Operation {
 
     public void setNewEntityPath(String newEntityPath) {
         this.newEntityPath = newEntityPath;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Operation operation = (Operation) o;
+        return entity == operation.entity && type == operation.type && Objects.equals(oldEntityPath, operation.oldEntityPath) && Objects.equals(newEntityPath, operation.newEntityPath);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(entity, type, oldEntityPath, newEntityPath);
     }
 
     @Override

@@ -47,7 +47,7 @@ public class File implements Comparable<File>, FileSystemElement {
         this.creationTime = new Date(bfa.creationTime().toMillis());
         this.lastModifiedTime = new Date(bfa.lastModifiedTime().toMillis());
         this.size = bfa.size();
-        this.crc32Hash = CRC32Hash.calculateCrc32Hash(this.getPath());
+        this.crc32Hash = FileTreeSnapshot.isComputing() ? CRC32Hash.calculateCrc32Hash(this.getPath()) : -1;
     }
 
     /**
@@ -78,6 +78,7 @@ public class File implements Comparable<File>, FileSystemElement {
         this.lastModifiedTime.setTime(bfa.lastModifiedTime().toMillis());
         this.size = bfa.size();
         this.crc32Hash = CRC32Hash.calculateCrc32Hash(this.getPath());
+
     }
 
     public String getName() {

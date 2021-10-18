@@ -16,7 +16,6 @@ public class FileHandler extends MessageToMessageDecoder<Message> {
     protected void decode(ChannelHandlerContext ctx, Message msg, List<Object> out) throws Exception {
         Path oldPath = Paths.get(Server.getWorkDirectory(), "\\", msg.getOperation().getOldEntityPath());
         Path newPath = Paths.get(Server.getWorkDirectory(),"\\", msg.getOperation().getNewEntityPath());
-        System.out.println(msg);
 
         if (msg.getOperation().getEntity() == Operation.Entity.FILE) {
             switch (msg.getOperation().getType()) {

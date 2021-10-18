@@ -28,7 +28,7 @@ public class Server {
                         protected void initChannel(Channel ch) {
                             ch.pipeline().addLast(
                                     new LengthFieldBasedFrameDecoder(
-                                            1024 * 1024 * 10,
+                                            1024 * 1024 * 150,
                                             0,
                                             8,
                                             0,
@@ -46,7 +46,7 @@ public class Server {
                     .childOption(ChannelOption.SO_KEEPALIVE, true);
 
             ChannelFuture channelFuture = serverBootstrap.bind(11111).sync();
-            System.out.println("network.Server started");
+            System.out.println("Server started");
 
             channelFuture.channel().closeFuture().sync();
         } finally {

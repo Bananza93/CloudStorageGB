@@ -33,7 +33,7 @@ public class DirectoryWatcher {
         this.watcher = FileSystems.getDefault().newWatchService();
         this.snapshot = fts;
         this.session = session;
-        this.rootDirectory = fts.getInitialDirectory().getPath();
+        this.rootDirectory = fts.getInitialPath();
         this.operationsList = new ArrayList<>();
         this.lock = new ReentrantLock();
         this.timer = new Timer();
@@ -67,6 +67,11 @@ public class DirectoryWatcher {
             WatchKey key;
 
             try {
+                while (FileTreeSnapshot.isComputing()) {
+                    synchronized (this) {
+                        this.wait(500);
+                    }
+                }
                 key = watcher.take();
                 lock.lock();
             } catch (InterruptedException e) {
@@ -81,7 +86,6 @@ public class DirectoryWatcher {
                 Directory currElementParentDir = snapshot.getDirectory(currElementPath.getParent());
                 String currElementName = currElementPath.getFileName().toString();
                 FileSystemElement currElement;
-
 
                 if (kind == ENTRY_CREATE) {
                     if (Files.isDirectory(currElementPath)) {
@@ -139,6 +143,7 @@ public class DirectoryWatcher {
                         addOperation(Operation.Type.MODIFY, Operation.Entity.DIRECTORY, currElementPath);
                     } else {
                         currElementParentDir.getFile(currElementName).updateInfoAfterModifying();
+
                         addOperation(Operation.Type.MODIFY, Operation.Entity.FILE, currElementPath);
                     }
                     continue;
@@ -173,7 +178,6 @@ public class DirectoryWatcher {
                 operationsList.add(Operation.moveTo(entity, oldPath, newPath));
             }
         }
-
     }
 
     private void sendOperations() throws IOException {

@@ -43,7 +43,7 @@ public class SessionHandler {
                     protected void initChannel(NioSocketChannel ch) {
                         ch.pipeline().addLast(
                                 new LengthFieldBasedFrameDecoder(
-                                        1024 * 1024 * 10,
+                                        1024 * 1024 * 200,
                                         0,
                                         8,
                                         0,

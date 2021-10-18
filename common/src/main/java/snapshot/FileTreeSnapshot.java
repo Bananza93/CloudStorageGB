@@ -1,5 +1,7 @@
 package snapshot;
 
+import utils.ThreadPool;
+
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -15,7 +17,7 @@ public class FileTreeSnapshot {
 
     private final Path initialPath;
     private Directory initialDirectory;
-    private boolean computing;
+    private static boolean computing = false;
 
     /**
      * Создает "снимок" файловой системы, стартовой точкой которого будет являться корневой каталог.
@@ -26,11 +28,16 @@ public class FileTreeSnapshot {
      */
     public FileTreeSnapshot(Path initialPath) throws IOException {
         if (!Files.exists(initialPath)) {
-            Files.createDirectory(initialPath);
+            Files.createDirectories(initialPath);
         }
         this.initialPath = initialPath;
-        this.computing = false;
-        createSnapshot();
+        ThreadPool.addTask(() -> {
+            try {
+                createSnapshot();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     private void createSnapshot() throws IOException {
@@ -101,12 +108,16 @@ public class FileTreeSnapshot {
         }
     }
 
-    public boolean isComputing() {
-        return this.computing;
+    public static boolean isComputing() {
+        return computing;
     }
 
     public Directory getInitialDirectory() {
         return this.initialDirectory;
+    }
+
+    public Path getInitialPath() {
+        return this.initialPath;
     }
 
     /**
