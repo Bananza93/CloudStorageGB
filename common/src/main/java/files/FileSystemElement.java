@@ -1,4 +1,4 @@
-package snapshot;
+package files;
 
 public interface FileSystemElement {
 }

@@ -1,0 +1,5 @@
+package operations;
+
+public enum OperationType {
+    CREATE, DELETE, MODIFY, RENAME, COPY, MOVE_TO, FILE_WRITING, AUTH_REQUEST, AUTH_SUCCESS, AUTH_FAILED
+}

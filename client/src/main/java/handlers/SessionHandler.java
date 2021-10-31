@@ -1,5 +1,6 @@
-package network;
+package handlers;
 
+import files.SimpleFile;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -10,7 +11,10 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.codec.bytes.ByteArrayDecoder;
 import io.netty.handler.codec.bytes.ByteArrayEncoder;
+import network.JSONDecoder;
+import network.JSONEncoder;
 
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -23,6 +27,8 @@ public class SessionHandler {
     private ChannelFuture channel;
     private boolean isProgramRunning;
     private Timer isSessionAliveTimer;
+    private boolean isAuthorized;
+    private List<SimpleFile> serverSideUserFilesList;
 
     public SessionHandler(String host, int port, String username) {
         this.serverHost = host;
@@ -32,6 +38,8 @@ public class SessionHandler {
         this.channel = null;
         this.isProgramRunning = true;
         this.isSessionAliveTimer = new Timer();
+        this.isAuthorized = false;
+        this.serverSideUserFilesList = null;
     }
 
     private Bootstrap settingClient() {
@@ -53,7 +61,8 @@ public class SessionHandler {
                                 new ByteArrayDecoder(),
                                 new ByteArrayEncoder(),
                                 new JSONDecoder(),
-                                new JSONEncoder()
+                                new JSONEncoder(),
+                                new AuthenticateHandler()
                         );
                     }
                 });
@@ -108,6 +117,22 @@ public class SessionHandler {
 
     public boolean isAlive() {
         return channel != null && getChannel().isActive();
+    }
+
+    public boolean isAuthorized() {
+        return isAuthorized;
+    }
+
+    public void setAuthorized(boolean isAuthorized) {
+        this.isAuthorized = isAuthorized;
+    }
+
+    public List<SimpleFile> getServerSideUserFilesList() {
+        return serverSideUserFilesList;
+    }
+
+    public void setServerSideUserFilesList(List<SimpleFile> serverSideUserFilesList) {
+        this.serverSideUserFilesList = serverSideUserFilesList;
     }
 
     public void shutdown() {

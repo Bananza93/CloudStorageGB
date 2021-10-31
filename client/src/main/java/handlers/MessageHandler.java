@@ -1,6 +1,10 @@
-package network;
+package handlers;
 
-import watcher.Operation;
+import client.Client;
+import network.Message;
+import operations.AuthOperation;
+import operations.FileOperation;
+import operations.OperationType;
 
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -8,24 +12,24 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 
-public class MessageSender {
+public class MessageHandler {
 
-    public void send(Operation operation, SessionHandler session) {
-        if (operation.getEntity() == Operation.Entity.FILE && (operation.getType() == Operation.Type.CREATE || operation.getType() == Operation.Type.MODIFY)) {
+    public void send(FileOperation operation, SessionHandler session) {
+        if (operation.getEntity() == FileOperation.Entity.FILE && (operation.getType() == OperationType.CREATE || operation.getType() == OperationType.MODIFY)) {
             sendMessageWithFile(operation, session);
         } else {
             sendMessage(operation, session);
         }
+        System.out.println("SENT: " + operation);
     }
 
-    private void sendMessageWithFile(Operation operation, SessionHandler session) {
+    private void sendMessageWithFile(FileOperation operation, SessionHandler session) {
         String filename = operation.getOldEntityPath();
         byte[] buffer = new byte[1024 * 1024 * 5];
 
-        operation.setOldEntityPath(excludeRootPath(filename, session.getUsername()));
         sendMessage(operation, session);
 
-        Operation sendFile = Operation.writingFile(operation);
+        FileOperation sendFile = FileOperation.writingFile(operation);
         try {
             @SuppressWarnings("resource")
             FileChannel channel = new RandomAccessFile(filename, "rw").getChannel();
@@ -60,11 +64,17 @@ public class MessageSender {
         }
     }
 
-    private void sendMessage(Operation operation, SessionHandler session) {
+    private void sendMessage(FileOperation operation, SessionHandler session) {
         Message m = new Message();
         m.setOperation(operation);
-        operation.setOldEntityPath(excludeRootPath(operation.getOldEntityPath(), session.getUsername()));
-        operation.setNewEntityPath(excludeRootPath(operation.getNewEntityPath(), session.getUsername()));
+        operation.setOldEntityPath(replaceWorkDirWithUsername(operation.getOldEntityPath(), session.getUsername()));
+        operation.setNewEntityPath(replaceWorkDirWithUsername(operation.getNewEntityPath(), session.getUsername()));
+        session.getChannel().writeAndFlush(m);
+    }
+
+    public void sendAuthRequest(SessionHandler session) {
+        Message m = new Message();
+        m.setOperation(AuthOperation.createAuthRequest(session.getUsername()));
         session.getChannel().writeAndFlush(m);
     }
 
@@ -74,7 +84,9 @@ public class MessageSender {
      * @param path путь до сущности
      * @return путь без корневой директории
      */
-    private String excludeRootPath(String path, String username) {
-        return path == null ? null : path.replace(Operation.getWatcherRootPath().toString(), username.toLowerCase() + "\\");
+    private String replaceWorkDirWithUsername(String path, String username) {
+        if (path == null) return null;
+        String cutted = path.replace(Client.getWorkDirPath(), "");
+        return username + cutted;
     }
 }

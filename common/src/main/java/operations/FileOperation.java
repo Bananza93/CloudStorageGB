@@ -1,4 +1,4 @@
-package watcher;
+package operations;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -8,17 +8,16 @@ import java.util.Objects;
 /**
  * Представляет собой сообщение о проведенной операции в отслеживаемой watcher.DirectoryWatcher директории.
  */
-public class Operation {
+public class FileOperation extends Operation {
 
     @JsonIgnore
     private static Path watcherRootPath;
     private Entity entity;
-    private Type type;
     private String oldEntityPath;
     private String newEntityPath;
 
 
-    public Operation() {
+    public FileOperation() {
     }
 
     /**
@@ -28,7 +27,7 @@ public class Operation {
      * @param type       вид операции над сущностью
      * @param entityPath путь до сущности
      */
-    private Operation(Entity entity, Type type, String entityPath) {
+    private FileOperation(Entity entity, OperationType type, String entityPath) {
         this(entity, type, entityPath, null);
     }
 
@@ -40,11 +39,9 @@ public class Operation {
      * @param oldPath прежний путь до сущности
      * @param newPath новый путь до сущности
      */
-    private Operation(Entity entity, Type type, String oldPath, String newPath) {
-        if (watcherRootPath == null)
-            throw new RuntimeException("watcher.DirectoryWatcher not initialized");
+    private FileOperation(Entity entity, OperationType type, String oldPath, String newPath) {
+        super(type);
         this.entity = entity;
-        this.type = type;
         this.oldEntityPath = oldPath;
         this.newEntityPath = newPath == null ? "" : newPath;
     }
@@ -58,30 +55,34 @@ public class Operation {
         watcherRootPath = path;
     }
 
-    public static Operation create(Entity entity, Path entityPath) {
-        return new Operation(entity, Type.CREATE, entityPath.toString());
+    public static FileOperation create(Entity entity, Path entityPath) {
+        return new FileOperation(entity, OperationType.CREATE, entityPath.toString());
     }
 
-    public static Operation delete(Entity entity, Path entityPath) {
-        return new Operation(entity, Type.DELETE, entityPath.toString());
+    public static FileOperation delete(Entity entity, Path entityPath) {
+        return new FileOperation(entity, OperationType.DELETE, entityPath.toString());
     }
 
-    public static Operation modify(Entity entity, Path entityPath) {
-        return new Operation(entity, Type.MODIFY, entityPath.toString());
+    public static FileOperation modify(Entity entity, Path entityPath) {
+        return new FileOperation(entity, OperationType.MODIFY, entityPath.toString());
     }
 
-    public static Operation rename(Entity entity, Path oldPath, Path newPath) {
-        return new Operation(entity, Type.RENAME, oldPath.toString(), newPath.toString());
+    public static FileOperation rename(Entity entity, Path oldPath, Path newPath) {
+        return new FileOperation(entity, OperationType.RENAME, oldPath.toString(), newPath.toString());
     }
 
-    public static Operation moveTo(Entity entity, Path oldPath, Path newPath) {
-        return new Operation(entity, Type.MOVE_TO, oldPath.toString(), newPath.toString());
+    public static FileOperation copy(Entity entity, Path fromPath, Path toPath) {
+        return new FileOperation(entity, OperationType.COPY, fromPath.toString(), toPath.toString());
     }
 
-    public static Operation writingFile(Operation operation) {
+    public static FileOperation moveTo(Entity entity, Path fromPath, Path toPath) {
+        return new FileOperation(entity, OperationType.MOVE_TO, fromPath.toString(), toPath.toString());
+    }
+
+    public static FileOperation writingFile(FileOperation operation) {
         if (operation.getEntity() == Entity.FILE) {
-            if (operation.getType() == Type.CREATE || operation.getType() == Type.MODIFY) {
-                return new Operation(Entity.FILE, Type.FILE_WRITING, operation.oldEntityPath);
+            if (operation.getType() == OperationType.CREATE || operation.getType() == OperationType.MODIFY) {
+                return new FileOperation(Entity.FILE, OperationType.FILE_WRITING, operation.oldEntityPath);
             }
         }
         throw new RuntimeException("Unsupported combination (ENTITY = " + operation.getEntity() + ", TYPE = " + operation.getType() + ") for this operation.");
@@ -95,20 +96,12 @@ public class Operation {
         return entity;
     }
 
-    public Type getType() {
-        return type;
-    }
-
     public String getOldEntityPath() {
         return oldEntityPath;
     }
 
     public String getNewEntityPath() {
         return newEntityPath;
-    }
-
-    public void setType(Type type) {
-        this.type = type;
     }
 
     public void setOldEntityPath(String oldEntityPath) {
@@ -123,20 +116,20 @@ public class Operation {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Operation operation = (Operation) o;
-        return entity == operation.entity && type == operation.type && Objects.equals(oldEntityPath, operation.oldEntityPath) && Objects.equals(newEntityPath, operation.newEntityPath);
+        FileOperation operation = (FileOperation) o;
+        return entity == operation.entity && this.getType() == operation.getType() && Objects.equals(oldEntityPath, operation.oldEntityPath) && Objects.equals(newEntityPath, operation.newEntityPath);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(entity, type, oldEntityPath, newEntityPath);
+        return Objects.hash(entity, this.getType(), oldEntityPath, newEntityPath);
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(type.name()).append(" ").append(entity.name()).append(" (");
-        switch (this.type) {
+        sb.append(getType().name()).append(" ").append(entity.name()).append(" (");
+        switch (this.getType()) {
             case RENAME -> sb.append("oldName = \"").append(oldEntityPath).append("\"")
                     .append(", newName = \"").append(newEntityPath).append("\"");
             case MOVE_TO -> sb.append("oldParentDirectory = \"").append(oldEntityPath).append("\"")
@@ -145,10 +138,6 @@ public class Operation {
         }
         sb.append(")");
         return sb.toString();
-    }
-
-    public enum Type {
-        CREATE, DELETE, MODIFY, RENAME, MOVE_TO, FILE_WRITING
     }
 
     public enum Entity {
