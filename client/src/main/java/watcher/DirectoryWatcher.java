@@ -1,6 +1,7 @@
 package watcher;
 
 import com.sun.nio.file.ExtendedWatchEventModifier;
+import network.*;
 import snapshot.Directory;
 import snapshot.File;
 import snapshot.FileSystemElement;
@@ -22,15 +23,17 @@ public class DirectoryWatcher {
 
     private final WatchService watcher;
     private final FileTreeSnapshot snapshot;
+    private final SessionHandler session;
     private final Path rootDirectory;
     private List<Operation> operationsList;
     private final ReentrantLock lock;
     private Timer timer;
 
-    private DirectoryWatcher(FileTreeSnapshot fts) throws IOException {
+    private DirectoryWatcher(FileTreeSnapshot fts, SessionHandler session) throws IOException {
         this.watcher = FileSystems.getDefault().newWatchService();
         this.snapshot = fts;
-        this.rootDirectory = fts.getInitialDirectory().getPath();
+        this.session = session;
+        this.rootDirectory = fts.getInitialPath();
         this.operationsList = new ArrayList<>();
         this.lock = new ReentrantLock();
         this.timer = new Timer();
@@ -41,10 +44,10 @@ public class DirectoryWatcher {
         Operation.setWatcherRootPath(rootDirectory);
     }
 
-    public static DirectoryWatcher init(FileTreeSnapshot fts) throws IOException {
+    public static DirectoryWatcher init(FileTreeSnapshot fts, SessionHandler session) throws IOException {
         if (currentWatcher != null)
             throw new RuntimeException("watcher.DirectoryWatcher already initialized");
-        return new DirectoryWatcher(fts);
+        return new DirectoryWatcher(fts, session);
     }
 
     public void shutdown() throws IOException {
@@ -58,11 +61,17 @@ public class DirectoryWatcher {
     public void start() throws IOException {
         WatchEvent<?> prevEvent = null;
         FileSystemElement prevElement = null;
+        System.out.println("Watcher started.");
 
         while (true) {
             WatchKey key;
 
             try {
+                while (FileTreeSnapshot.isComputing()) {
+                    synchronized (this) {
+                        this.wait(500);
+                    }
+                }
                 key = watcher.take();
                 lock.lock();
             } catch (InterruptedException e) {
@@ -77,7 +86,6 @@ public class DirectoryWatcher {
                 Directory currElementParentDir = snapshot.getDirectory(currElementPath.getParent());
                 String currElementName = currElementPath.getFileName().toString();
                 FileSystemElement currElement;
-
 
                 if (kind == ENTRY_CREATE) {
                     if (Files.isDirectory(currElementPath)) {
@@ -135,6 +143,7 @@ public class DirectoryWatcher {
                         addOperation(Operation.Type.MODIFY, Operation.Entity.DIRECTORY, currElementPath);
                     } else {
                         currElementParentDir.getFile(currElementName).updateInfoAfterModifying();
+
                         addOperation(Operation.Type.MODIFY, Operation.Entity.FILE, currElementPath);
                     }
                     continue;
@@ -169,13 +178,13 @@ public class DirectoryWatcher {
                 operationsList.add(Operation.moveTo(entity, oldPath, newPath));
             }
         }
-
     }
 
-    public void sendOperations() {
+    private void sendOperations() throws IOException {
         if (lock.tryLock()) {
             for (Operation op : operationsList) {
                 System.out.println("SENDING: " + op);
+                new MessageSender().send(op, session);
             }
             operationsList = new ArrayList<>();
             lock.unlock();
@@ -187,7 +196,11 @@ public class DirectoryWatcher {
         (timer = new Timer()).schedule(new TimerTask() {
             @Override
             public void run() {
-                sendOperations();
+                try {
+                    sendOperations();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }, 100);
     }
@@ -204,8 +217,8 @@ public class DirectoryWatcher {
 
     private boolean isFilesEqual(Path newFile, File prevFile) throws IOException {
         BasicFileAttributes bfa = Files.getFileAttributeView(newFile, BasicFileAttributeView.class).readAttributes();
-        return bfa.creationTime().equals(prevFile.getCreationTime())
-                && bfa.lastModifiedTime().equals(prevFile.getLastModifiedTime())
+        return new Date(bfa.creationTime().toMillis()).equals(prevFile.getCreationTime())
+                && new Date(bfa.lastModifiedTime().toMillis()).equals(prevFile.getLastModifiedTime())
                 && bfa.size() == prevFile.getSize()
                 && CRC32Hash.calculateCrc32Hash(newFile) == prevFile.getCrc32Hash();
     }
@@ -222,8 +235,8 @@ public class DirectoryWatcher {
 
     private boolean isDirectoriesEqual(Path newDirectory, Directory prevDirectory) throws IOException {
         BasicFileAttributes bfa = Files.getFileAttributeView(newDirectory, BasicFileAttributeView.class).readAttributes();
-        return bfa.creationTime().equals(prevDirectory.getCreationTime())
-                && bfa.lastModifiedTime().equals(prevDirectory.getLastModifiedTime())
+        return new Date(bfa.creationTime().toMillis()).equals(prevDirectory.getCreationTime())
+                && new Date(bfa.lastModifiedTime().toMillis()).equals(prevDirectory.getLastModifiedTime())
                 && !prevDirectory.isEmpty();
     }
 

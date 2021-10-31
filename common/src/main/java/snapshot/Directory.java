@@ -1,11 +1,15 @@
 package snapshot;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileTime;
 import java.util.*;
 
 /**
@@ -13,21 +17,34 @@ import java.util.*;
  * Содержит в себе необходимые параметры директории для работы с watcher.DirectoryWatcher.
  * Для упрощения описания, ""снимок" директории", в большинстве случаев, заменен на "директория".
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Directory implements Comparable<Directory>, FileSystemElement {
-
+    @JsonProperty
     private String name;
+    @JsonProperty
     private Path parentPathForRoot;
+    @JsonBackReference
+    @JsonProperty
     private Directory parentDirectory;
-    private final FileTime creationTime;
-    private FileTime lastModifiedTime;
+    @JsonProperty
+    private Date creationTime;
+    @JsonProperty
+    private Date lastModifiedTime;
     /**
      * Перечень всех подпапок в текущей директории.
      */
-    private final Map<String, Directory> subdirectories;
+    @JsonManagedReference
+    @JsonProperty
+    private Map<String, Directory> subdirectories;
     /**
      * Перечень всех файлов в текущей директории.
      */
-    private final Map<String, File> files;
+    @JsonManagedReference
+    @JsonProperty
+    private Map<String, File> files;
+
+    public Directory() {
+    }
 
     /**
      * Создает "снимок" существующей в файловой системе директории.
@@ -41,8 +58,8 @@ public class Directory implements Comparable<Directory>, FileSystemElement {
         this.parentPathForRoot = parent;
         this.parentDirectory = null;
         BasicFileAttributes bfa = Files.getFileAttributeView(this.getPath(), BasicFileAttributeView.class).readAttributes();
-        this.creationTime = bfa.creationTime();
-        this.lastModifiedTime = bfa.lastModifiedTime();
+        this.creationTime = new Date(bfa.creationTime().toMillis());
+        this.lastModifiedTime = new Date(bfa.lastModifiedTime().toMillis());
         this.subdirectories = new HashMap<>();
         this.files = new HashMap<>();
     }
@@ -55,7 +72,9 @@ public class Directory implements Comparable<Directory>, FileSystemElement {
      * @throws IOException если такой директории не существует в файловой системе
      */
     public static Directory createRootDirectory(Path rootPath) throws IOException {
-        return new Directory(rootPath.getFileName().toString(), rootPath.getParent());
+        Directory d =  new Directory(rootPath.getFileName().toString(), rootPath.getParent());
+        d.setParentDirectory(new Directory("", Path.of("")));
+        return d;
     }
 
     /**
@@ -209,11 +228,11 @@ public class Directory implements Comparable<Directory>, FileSystemElement {
         return parentDirectory.getPath();
     }
 
-    public FileTime getCreationTime() {
+    public Date getCreationTime() {
         return creationTime;
     }
 
-    public FileTime getLastModifiedTime() {
+    public Date getLastModifiedTime() {
         return this.lastModifiedTime;
     }
 
@@ -222,7 +241,7 @@ public class Directory implements Comparable<Directory>, FileSystemElement {
     }
 
     public void updateLastModified() throws IOException {
-        this.lastModifiedTime = Files.getLastModifiedTime(this.getPath());
+        this.lastModifiedTime.setTime(Files.getLastModifiedTime(this.getPath()).toMillis());
     }
 
     public boolean isEmpty() {
