@@ -1,4 +1,4 @@
-package snapshot;
+package files;
 
 import utils.ThreadPool;
 
@@ -16,7 +16,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 public class FileTreeSnapshot {
 
     private final Path initialPath;
-    private Directory initialDirectory;
+    private ClientDirectory initialClientDirectory;
     private static boolean computing = false;
 
     /**
@@ -43,7 +43,7 @@ public class FileTreeSnapshot {
     private void createSnapshot() throws IOException {
         long start = System.currentTimeMillis();
         System.out.println("Creating snapshot for " + initialPath + "...");
-        this.initialDirectory = fillDirectory(initialPath);
+        this.initialClientDirectory = fillDirectory(initialPath);
         System.out.printf("Snapshot created (%.3f sec).\n", ((System.currentTimeMillis() - start) / 1000.0));
     }
 
@@ -52,16 +52,16 @@ public class FileTreeSnapshot {
      * @return "снимок" файловой системы
      * @throws IOException если в процессе создания "снимка" в стартовой директории произойдут изменения или в случае недостатка привелегий для открытия директории/файла.
      */
-    public Directory fillDirectory(Path startPath) throws IOException {
+    public ClientDirectory fillDirectory(Path startPath) throws IOException {
         computing = true;
-        Directory result = Directory.createRootDirectory(startPath);
-        final Directory[] currDir = {result};
+        ClientDirectory result = ClientDirectory.createRootDirectory(startPath);
+        final ClientDirectory[] currDir = {result};
         try {
             Files.walkFileTree(currDir[0].getPath(), new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
                     if (!dir.equals(startPath)) {
-                        Directory d = Directory.createDirectory(dir.getFileName().toString(), dir.getParent());
+                        ClientDirectory d = ClientDirectory.createDirectory(dir.getFileName().toString(), dir.getParent());
                         currDir[0].addSubdirectory(d);
                         currDir[0] = d;
                     }
@@ -70,7 +70,7 @@ public class FileTreeSnapshot {
 
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    currDir[0].addFile(new File(file.getFileName().toString(), currDir[0]));
+                    currDir[0].addFile(new ClientFile(file, currDir[0]));
                     return FileVisitResult.CONTINUE;
                 }
 
@@ -99,12 +99,12 @@ public class FileTreeSnapshot {
      * @param path путь до директории
      * @return директория, соответствующая переданному пути
      */
-    public Directory getDirectory(Path path) {
+    public ClientDirectory getDirectory(Path path) {
         String cutPath = path.toString().replace(initialPath.toString(), "");
-        if (cutPath.isEmpty()) return initialDirectory;
+        if (cutPath.isEmpty()) return initialClientDirectory;
         else {
             String[] s = cutPath.substring(1).split("\\\\");
-            return initialDirectory.getDirectory(s, 0);
+            return initialClientDirectory.getDirectory(s, 0);
         }
     }
 
@@ -112,8 +112,8 @@ public class FileTreeSnapshot {
         return computing;
     }
 
-    public Directory getInitialDirectory() {
-        return this.initialDirectory;
+    public ClientDirectory getInitialDirectory() {
+        return this.initialClientDirectory;
     }
 
     public Path getInitialPath() {
@@ -124,16 +124,17 @@ public class FileTreeSnapshot {
      * Выводит в консоль визуальное представление текущего "снимка"
      */
     public void printFileTree() {
-        printFileTree0(initialDirectory, 0);
+        printFileTree0(initialClientDirectory, 0);
     }
 
-    private void printFileTree0(Directory start, int offset) {
+    private void printFileTree0(ClientDirectory start, int offset) {
         System.out.println("\t".repeat(offset) + "[" + start.getName() + "]");
-        for (Directory dir : start.getSubdirectories()) {
+        for (ClientDirectory dir : start.getSubdirectories()) {
             printFileTree0(dir, offset + 1);
         }
-        for (File f : start.getFiles()) {
+        for (ClientFile f : start.getFiles()) {
             System.out.println("\t".repeat(offset + 1) + f.getName());
         }
     }
+
 }

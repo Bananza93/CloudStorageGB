@@ -1,8 +1,5 @@
 package utils;
 
-import snapshot.Directory;
-import snapshot.File;
-
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -48,21 +45,5 @@ public class CRC32Hash {
             //do nothing
         }
         return crc.getValue();
-    }
-
-
-    public static long calcXorHashSum(Directory startDirectory) {
-        return calcXorHashSum0(startDirectory, 0L);
-    }
-
-    private static long calcXorHashSum0(Directory currDirectory, long currValue) {
-        long result = currValue;
-        for (Directory dir : currDirectory.getSubdirectories()) {
-            result ^= calcXorHashSum0(dir, result);
-        }
-        for (File f : currDirectory.getFiles()) {
-            result ^= f.getCrc32Hash();
-        }
-        return result;
     }
 }

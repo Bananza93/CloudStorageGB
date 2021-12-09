@@ -1,6 +1,6 @@
 package network;
 
-import watcher.Operation;
+import operations.Operation;
 
 import java.util.Arrays;
 
